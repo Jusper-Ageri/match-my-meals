@@ -8,6 +8,7 @@ import { RecipeSearch } from "@/components/RecipeSearch";
 import heroImage from "@/assets/hero-image.jpg";
 import { ChefHat, Sparkles, Heart } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { generateRecipesFromIngredients } from "@/services/recipeGenerator";
 
 // Mock recipes for demonstration
 const MOCK_RECIPES: Recipe[] = [
@@ -94,27 +95,69 @@ const Index = () => {
   };
 
   const handleSuggestRecipes = async () => {
+    if (selectedIngredients.length === 0) {
+      toast({
+        title: "No ingredients selected",
+        description: "Please select some ingredients first!",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // For demo purposes, show mock recipes that match some ingredients
-    const matchingRecipes = MOCK_RECIPES.filter(recipe =>
-      recipe.ingredients.some(ingredient =>
-        selectedIngredients.some(selected =>
-          ingredient.toLowerCase().includes(selected.toLowerCase())
+    try {
+      // Use Hugging Face to generate recipes
+      const aiRecipes = await generateRecipesFromIngredients(selectedIngredients);
+      
+      // Combine AI-generated recipes with mock recipes for variety
+      const matchingMockRecipes = MOCK_RECIPES.filter(recipe =>
+        recipe.ingredients.some(ingredient =>
+          selectedIngredients.some(selected =>
+            ingredient.toLowerCase().includes(selected.toLowerCase())
+          )
         )
-      )
-    );
-    
-    setRecipes(matchingRecipes.length > 0 ? matchingRecipes : MOCK_RECIPES);
-    setIsLoading(false);
-    
-    toast({
-      title: "Recipes Found!",
-      description: `Found ${matchingRecipes.length > 0 ? matchingRecipes.length : MOCK_RECIPES.length} delicious recipes for you.`,
-    });
+      );
+      
+      const allRecipes = [
+        ...aiRecipes.map((recipe, index) => ({
+          id: `ai-${index}`,
+          title: recipe.title,
+          ingredients: recipe.ingredients,
+          steps: recipe.steps,
+          cookTime: recipe.cookTime,
+          servings: recipe.servings,
+          difficulty: recipe.difficulty
+        })),
+        ...matchingMockRecipes
+      ];
+      
+      setRecipes(allRecipes);
+      
+      toast({
+        title: "AI Recipes Generated!",
+        description: `Found ${allRecipes.length} delicious recipes using AI and our database.`,
+      });
+    } catch (error) {
+      console.error('Error generating recipes:', error);
+      
+      // Fallback to mock recipes
+      const matchingRecipes = MOCK_RECIPES.filter(recipe =>
+        recipe.ingredients.some(ingredient =>
+          selectedIngredients.some(selected =>
+            ingredient.toLowerCase().includes(selected.toLowerCase())
+          )
+        )
+      );
+      
+      setRecipes(matchingRecipes.length > 0 ? matchingRecipes : MOCK_RECIPES);
+      
+      toast({
+        title: "Recipes Found!",
+        description: `Found ${matchingRecipes.length > 0 ? matchingRecipes.length : MOCK_RECIPES.length} recipes from our database.`,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleUpgradeToPremium = () => {

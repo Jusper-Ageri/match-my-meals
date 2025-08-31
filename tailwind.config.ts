@@ -52,6 +52,11 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Custom food-themed colors
+				spice: 'hsl(var(--spice))',
+				herb: 'hsl(var(--herb))',
+				cream: 'hsl(var(--cream))',
+				warmth: 'hsl(var(--warmth))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
